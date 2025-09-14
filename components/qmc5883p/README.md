@@ -40,6 +40,7 @@ sensor:
 
 - **range** (*Optional*): The range parameter for the sensor.
 - **oversampling** (*Optional*): The oversampling parameter for the sensor.
+- **noiselevel** (*Optional*): The downsampling on noiselevel for the sensor
 - **update_interval** (*Optional*, [Time](#config-time)): The interval to check the sensor. Defaults to `60s`.
 - **id** (*Optional*, ID): Manually specify the ID used for code generation.
 
@@ -64,9 +65,9 @@ configure this amount. Possible sampling values:
 - `2x`
 - `1x`
 
-## Noise level  Options
+## Noiselevel  Options
 
-By default, the QMC5883P uses another filter for better noise performance, this depthh is 8x as default.
+By default, the QMC5883P uses another filter for better noise performance, this depth is 8x as default.
 You can, however, configure this amount. Possible values:
 
 - `8x` (default)
