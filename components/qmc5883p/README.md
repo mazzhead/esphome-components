@@ -1,7 +1,7 @@
 The `qmc5883p` allows you to use your QMC5883P triple-axis magnetometers
 ([datasheet](https://www.lcsc.com/datasheet/C2847467.pdf)) with
-ESPHome. This sensor is very simular to the [HMC5883L](#hmc5883l) and [QMC5883L](#qmc5883l) sensor and is often found
-as a knock off replacement. The QMC5883P sensor configuration differs. The [I²C Bus](#i2c) is required to be set up in
+ESPHome. This sensor is very simular to the HMC5883L and QMC5883L sensor and is often found
+as a knock off replacement. The QMC5883P sensor configuration differs. The I²C Bus is required to be set up in
 your configuration for this sensor to work.
 
 ```yaml
@@ -27,21 +27,21 @@ sensor:
 
 - **address** (*Optional*, int): Manually specify the I²c address of the sensor. Defaults to `0x2C`.
 - **field_strength_x** (*Optional*): The field strength in microtesla along the X-Axis. All options from
-  [Sensor](#config-sensor).
+  Sensor.
 
 - **field_strength_y** (*Optional*): The field strength in microtesla along the Y-Axis. All options from
-  [Sensor](#config-sensor).
+  Sensor.
 
 - **field_strength_z** (*Optional*): The field strength in microtesla along the Z-Axis. All options from
-  [Sensor](#config-sensor).
+  Sensor.
 
 - **heading** (*Optional*): The heading of the sensor in degrees. All options from
-  [Sensor](#config-sensor).
+  Sensor.
 
 - **range** (*Optional*): The range parameter for the sensor.
 - **oversampling** (*Optional*): The oversampling parameter for the sensor.
 - **update_interval** (*Optional*, [Time](#config-time)): The interval to check the sensor. Defaults to `60s`.
-- **id** (*Optional*, [ID](#config-id)): Manually specify the ID used for code generation.
+- **id** (*Optional*, ID): Manually specify the ID used for code generation.
 
 ## Range Options
 
@@ -73,8 +73,3 @@ You can, however, configure this amount. Possible values:
 - `4x`
 - `2x`
 - `1x`
-
-## See Also
-
-- [Sensor Filters](#sensor-filters)
-
