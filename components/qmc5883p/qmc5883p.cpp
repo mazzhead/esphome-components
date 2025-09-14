@@ -22,24 +22,12 @@ static const uint8_t QMC5883P_REGISTER_CONTROL_2 = 0x0B;
 static const uint8_t QMC5883P_REGISTER_PERIOD = 0x0C;
 
 void QMC5883PComponent::setup() {
-  ESP_LOGD(TAG,"Initializing...");
   // From setup examples in datasheet register 29H is listed.....
   if (!this->write_byte(0x29,0x06)) {
     this->error_code_ = COMMUNICATION_FAILED;
     this->mark_failed();
     return;
   }
-  /* removed, just for initial testing
-  if (!this->write_byte(0x0B,0x08)) {
-    this->error_code_ = COMMUNICATION_FAILED;
-    this->mark_failed();
-    return;
-  }
-  if (!this->write_byte(0x0A,0xCD)) {
-    this->error_code_ = COMMUNICATION_FAILED;
-    this->mark_failed();
-    return;
-  } */
 
   // First set second register for Range, no soft reset/self test
   // Set/reset mode initial both, later make option
@@ -53,7 +41,6 @@ void QMC5883PComponent::setup() {
     this->mark_failed();
     return;
   }
-  ESP_LOGD(TAG,"Control Register 2: %x",control_2);
 
   // Register to set mode, datarate, oversampling and doensampling (noiselevel)
   uint8_t control_1 = 0;
@@ -66,7 +53,6 @@ void QMC5883PComponent::setup() {
     this->mark_failed();
     return;
   }
-  ESP_LOGD(TAG,"Control Register 1: %x",control_1);
 
   if (this->get_update_interval() < App.get_loop_interval()) {
     high_freq_.start();
@@ -100,7 +86,6 @@ void QMC5883PComponent::update() {
       this->status_set_warning(str_sprintf("status read failed (%d)", err).c_str());
       return;
     }
-//  ESP_LOGD(TAG, "Read Status Register for Data Ready %d", status);
   }
 
   uint16_t raw[3] = {0};
@@ -124,7 +109,6 @@ void QMC5883PComponent::update() {
     this->status_set_warning(str_sprintf("mag read failed (%d)", err).c_str());
     return;
   }
-//ESP_LOGD(TAG,"Raw data: X %d Y %d Z %d", raw[0],raw[1],raw[2]);
 
   // Measurement is 2s complement. So for 2Gauss 2000/32767miligauss per bit
   float mg_per_bit;
