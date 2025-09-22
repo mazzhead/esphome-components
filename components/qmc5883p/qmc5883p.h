@@ -48,6 +48,9 @@ class QMC5883PComponent : public PollingComponent, public i2c::I2CDevice {
   void dump_config() override;
   float get_setup_priority() const override;
   void update() override;
+  void loop() override;
+  void read_measurement();
+  void set_mode();
 
   void set_datarate(QMC5883PDatarate datarate) { datarate_ = datarate; }
   void set_range(QMC5883PRange range) { range_ = range; }
@@ -60,9 +63,9 @@ class QMC5883PComponent : public PollingComponent, public i2c::I2CDevice {
   void set_heading_sensor(sensor::Sensor *heading_sensor) { heading_sensor_ = heading_sensor; }
 
  protected:
-  QMC5883PDatarate datarate_{QMC5883P_DATARATE_10_HZ};
+  QMC5883PDatarate datarate_{QMC5883P_DATARATE_200_HZ};
   QMC5883PRange range_{QMC5883P_RANGE_30_G};
-  QMC5883PMode mode_{QMC5883P_MODE_NORMAL};
+  QMC5883PMode mode_{QMC5883P_MODE_SINGLE};
   QMC5883POversampling oversampling_{QMC5883P_SAMPLING_8};
   QMC5883PNoiselevel noiselevel_{QMC5883P_DSAMPLING_8};
   sensor::Sensor *x_sensor_{nullptr};

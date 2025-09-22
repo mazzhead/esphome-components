@@ -108,7 +108,7 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_RANGE, default="30G"): validate_enum(
                 QMC5883P_RANGES, units=["Gauss", "G"]
             ),
-            cv.Optional(CONF_MODE, default=1): validate_enum(
+            cv.Optional(CONF_MODE, default=2): validate_enum(
                 QMC5883P_MODES
             ),
             cv.Optional(CONF_OVERSAMPLING, default="8x"): validate_enum(
@@ -127,13 +127,15 @@ CONFIG_SCHEMA = (
     .extend(i2c.i2c_device_schema(0x2C))
 )
 
-# Output datarate is automatically matched to  update interval
+# Output datarate is automatically matched to update interval
 def auto_data_rate(config):
-    interval_sec = config[CONF_UPDATE_INTERVAL].total_milliseconds / 1000
-    interval_hz = 1.0 / interval_sec
-    for datarate in sorted(QMC5883PDatarates.keys()):
-        if float(datarate) >= interval_hz:
-            return QMC5883PDatarates[datarate]
+    mode = config[CONF_MODE]
+    if mode < 3:
+        interval_sec = config[CONF_UPDATE_INTERVAL].total_milliseconds / 1000
+        interval_hz = 1.0 / interval_sec
+        for datarate in sorted(QMC5883PDatarates.keys()):
+            if float(datarate) >= interval_hz:
+                return QMC5883PDatarates[datarate]
     return QMC5883PDatarates[200]
 
 async def to_code(config):

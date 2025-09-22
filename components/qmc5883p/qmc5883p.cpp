@@ -22,19 +22,21 @@ static const uint8_t QMC5883P_REGISTER_CONTROL_2 = 0x0B;
 static const uint8_t QMC5883P_REGISTER_PERIOD = 0x0C;
 
 void QMC5883PComponent::setup() {
-  ESP_LOGD(TAG,"Initializing...");
-  // From setup examples in datasheet register 29H is listed.....
+  // Disable loop() unless mode is Continuous
+  if (this->mode_ != QMC5883P_MODE_CONTINUOUS) this->disable_loop();
+
+  // From setup examples in datasheet register 29H is listed
   if (!this->write_byte(0x29,0x06)) {
     this->error_code_ = COMMUNICATION_FAILED;
     this->mark_failed();
     return;
   }
 
-  // First set second register for Range, no soft reset/self test
-  // Set/reset mode initial both, later make option
+  // First populate second register for Range, no soft reset/self test
+  // Set/reset mode initial both, later make option if asked to
   uint8_t control_2 = 0;
-  control_2 |= 0b0 << 7;  // SOFT_RST (Soft Reset) -> 0b00=disabled, 0b01=enabled
-  control_2 |= 0b0 << 6;  // SELF_TEST -> 0b00=disabled, 0b01=enabled
+  control_2 |= 0b0 << 7;  // SOFT_RST (Soft Reset) -> 0b0=disabled, 0b1=enabled
+  control_2 |= 0b0 << 6;  // SELF_TEST -> 0b0=disabled, 0b1=enabled
   control_2 |= this->range_ << 2;  // RNG (Range 2,8,12,30G)
   control_2 |= 0b00 << 0;  // SET/RESET MODE -> 0b00=both on, 0b01=Set only, none
   if (!this->write_byte(QMC5883P_REGISTER_CONTROL_2, control_2)) {
@@ -42,23 +44,14 @@ void QMC5883PComponent::setup() {
     this->mark_failed();
     return;
   }
+  // First register write, also used in update() function when single mode on
+  this->set_mode();
 
-  // Register to set mode, datarate, oversampling and doensampling (noiselevel)
-  uint8_t control_1 = 0;
-  control_1 |= this->mode_ << 0;  // MODE (Mode) -> 0b00=standby, 0b01=continuous
-  control_1 |= this->datarate_ << 2;
-  control_1 |= this->oversampling_ << 4;
-  control_1 |= this->noiselevel_ << 6;
-  if (!this->write_byte(QMC5883P_REGISTER_CONTROL_1, control_1)) {
-    this->error_code_ = COMMUNICATION_FAILED;
-    this->mark_failed();
-    return;
-  }
-
-  if (this->get_update_interval() < App.get_loop_interval()) {
+  if (this->mode_ == QMC5883P_MODE_CONTINUOUS && this->get_update_interval() < App.get_loop_interval()) {
     high_freq_.start();
   }
 }
+
 void QMC5883PComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "QMC5883P:");
   LOG_I2C_DEVICE(this);
@@ -75,18 +68,44 @@ void QMC5883PComponent::dump_config() {
 
 float QMC5883PComponent::get_setup_priority() const { return setup_priority::DATA; }
 
+void QMC5883PComponent::set_mode() {
+  // Register to set mode, datarate, oversampling and downsampling (noiselevel)
+  uint8_t control_1 = 0;
+  control_1 |= this->mode_ << 0;
+  control_1 |= this->datarate_ << 2;
+  control_1 |= this->oversampling_ << 4;
+  control_1 |= this->noiselevel_ << 6;
+  if (!this->write_byte(QMC5883P_REGISTER_CONTROL_1, control_1)) {
+    this->error_code_ = COMMUNICATION_FAILED;
+    this->mark_failed();
+    return;
+  }
+}
+
 void QMC5883PComponent::update() {
+  ESP_LOGV(TAG,"Entering update");
+
+  // Suspend mode no need for anything, with continuous loop() leads
+  switch(this->mode_) {
+    case QMC5883P_MODE_SINGLE:
+      this->set_mode();
+      this->enable_loop();
+      break;
+    case QMC5883P_MODE_NORMAL:
+      this->read_measurement();
+  }
+}
+
+void QMC5883PComponent::read_measurement() {
   i2c::ErrorCode err;
   uint8_t status = false;
 
   // Status byte gets cleared when data is read, so we have to read this first.
   // Just read whole register, no check on DRDY/OVFL yet
-  if (ESPHOME_LOG_LEVEL >= ESPHOME_LOG_LEVEL_DEBUG) {
-    err = this->read_register(QMC5883P_REGISTER_STATUS, &status, 1);
-    if (err != i2c::ERROR_OK) {
-      this->status_set_warning(str_sprintf("status read failed (%d)", err).c_str());
-      return;
-    }
+  err = this->read_register(QMC5883P_REGISTER_STATUS, &status, 1);
+  if (err != i2c::ERROR_OK) {
+    this->status_set_warning(str_sprintf("status read failed (%d)", err).c_str());
+    return;
   }
 
   uint16_t raw[3] = {0};
@@ -157,6 +176,18 @@ i2c::ErrorCode QMC5883PComponent::read_bytes_16_le_(uint8_t a_register, uint16_t
   for (size_t i = 0; i < len; i++)
     data[i] = convert_little_endian(data[i]);
   return err;
+}
+
+void QMC5883PComponent::loop() {
+  ESP_LOGVV(TAG,"Entering loop");
+  if (this->mode_ == QMC5883P_MODE_SINGLE) {
+    this->read_measurement();
+    this->disable_loop();
+  }
+  if (this->mode_ == QMC5883P_MODE_CONTINUOUS) {
+    this->read_measurement();
+  }
+
 }
 
 }  // namespace qmc5883p
