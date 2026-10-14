@@ -8,3 +8,5 @@ No fork and stuff, all too new for me, but probably when this evolves.
 
 In the subfolders each components is listed, for now just this qmc5883p component.
 
+Also ESPHome yaml that is usefull is published in the yaml folder
+
