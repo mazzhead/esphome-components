@@ -3,6 +3,7 @@
 #include "esphome/core/log.h"
 #include "esphome/core/hal.h"
 #include <cmath>
+#include <cstdio>
 
 namespace esphome {
 namespace qmc5883p {
@@ -104,7 +105,9 @@ void QMC5883PComponent::read_measurement() {
   // Just read whole register, no check on DRDY/OVFL yet
   err = this->read_register(QMC5883P_REGISTER_STATUS, &status, 1);
   if (err != i2c::ERROR_OK) {
-    this->status_set_warning(str_sprintf("status read failed (%d)", err).c_str());
+    char buf[32];
+    snprintf(buf, sizeof(buf), "status read failed (%d)", err);
+    this->status_set_warning(buf);
     return;
   }
 
@@ -126,7 +129,9 @@ void QMC5883PComponent::read_measurement() {
   }
   err = this->read_bytes_16_le_(start, &raw[dest], 3 - dest);
   if (err != i2c::ERROR_OK) {
-    this->status_set_warning(str_sprintf("mag read failed (%d)", err).c_str());
+    char buf[32];
+    snprintf(buf, sizeof(buf), "mag read failed (%d)", err);
+    this->status_set_warning(buf);
     return;
   }
 
